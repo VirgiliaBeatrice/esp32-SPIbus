@@ -24,11 +24,13 @@ IN THE SOFTWARE.
  #include "SPIbus.hpp"
  #include <stdio.h>
  #include <stdint.h>
+ #include <string.h>
  #include "driver/spi_common.h"
  #include "driver/spi_master.h"
  #include "esp_log.h"
  #include "esp_err.h"
  #include "sdkconfig.h"
+
 
 
 #if defined   CONFIG_SPIBUS_LOG_RW_LEVEL_INFO
@@ -62,6 +64,8 @@ SPI::~SPI() {
 
 esp_err_t SPI::begin(int mosi_io_num, int miso_io_num, int sclk_io_num, int max_transfer_sz) {
     spi_bus_config_t config;
+    // Configuration struct need to be initialized to 0.
+    memset(&config, 0, sizeof(config));
     config.mosi_io_num = mosi_io_num;
     config.miso_io_num = miso_io_num;
     config.sclk_io_num = sclk_io_num;
@@ -142,9 +146,9 @@ esp_err_t SPI::writeBytes(spi_device_handle_t handle, uint8_t regAddr, size_t le
     transaction.rx_buffer = NULL;
     esp_err_t err = spi_device_transmit(handle, &transaction);
     #if defined CONFIG_SPIBUS_LOG_READWRITES
-        if (!err) { 
+        if (!err) {
             char str[length*5+1];
-            for(size_t i = 0; i < length; i++) 
+            for(size_t i = 0; i < length; i++)
                 sprintf(str+i*5, "0x%s%X ", (data[i] < 0x10 ? "0" : ""), data[i]);
             SPIBUS_LOG_RW("[%s, handle:0x%X] Write %d bytes to__ register 0x%X, data: %s", (host == 1 ? "HSPI" : "VSPI"), (uint32_t)handle, length, regAddr, str);
         }
@@ -187,11 +191,11 @@ esp_err_t SPI::readBytes(spi_device_handle_t handle, uint8_t regAddr, size_t len
     transaction.user = NULL;
     transaction.tx_buffer = NULL;
     transaction.rx_buffer = data;
-    esp_err_t err = spi_device_transmit(handle, &transaction);    
+    esp_err_t err = spi_device_transmit(handle, &transaction);
     #if defined CONFIG_SPIBUS_LOG_READWRITES
-        if (!err) { 
-            char str[length*5+1]; 
-            for(size_t i = 0; i < length; i++) 
+        if (!err) {
+            char str[length*5+1];
+            for(size_t i = 0; i < length; i++)
             sprintf(str+i*5, "0x%s%X ", (data[i] < 0x10 ? "0" : ""), data[i]);
             SPIBUS_LOG_RW("[%s, handle:0x%X] Read_ %d bytes from register 0x%X, data: %s", (host == 1 ? "HSPI" : "VSPI"), (uint32_t)handle, length, regAddr, str);
         }
